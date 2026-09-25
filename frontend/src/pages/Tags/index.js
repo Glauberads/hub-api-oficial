@@ -1,0 +1,426 @@
+import React, {
+  useState,
+  useEffect,
+  useReducer,
+  useContext,
+  useRef,
+} from "react";
+import { toast } from "react-toastify";
+
+import { makeStyles } from "@material-ui/core/styles";
+import Paper from "@material-ui/core/Paper";
+import Button from "@material-ui/core/Button";
+import Table from "@material-ui/core/Table";
+import TableBody from "@material-ui/core/TableBody";
+import TableCell from "@material-ui/core/TableCell";
+import TableHead from "@material-ui/core/TableHead";
+import TableRow from "@material-ui/core/TableRow";
+import IconButton from "@material-ui/core/IconButton";
+import SearchIcon from "@material-ui/icons/Search";
+import TextField from "@material-ui/core/TextField";
+import InputAdornment from "@material-ui/core/InputAdornment";
+import { FormControl, InputLabel, Select, MenuItem, ButtonGroup, Menu } from "@material-ui/core";
+import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
+
+import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
+import EditIcon from "@material-ui/icons/Edit";
+
+import MainContainer from "../../components/MainContainer";
+import MainHeader from "../../components/MainHeader";
+import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper";
+import Title from "../../components/Title";
+
+import api from "../../services/api";
+import { i18n } from "../../translate/i18n";
+import TableRowSkeleton from "../../components/TableRowSkeleton";
+import TagModal from "../../components/TagModal";
+import ConfirmationModal from "../../components/ConfirmationModal";
+import toastError from "../../errors/toastError";
+import { Chip, CircularProgress } from "@material-ui/core";
+import { AuthContext } from "../../context/Auth/AuthContext";
+import { MoreHoriz, CloudDownload } from "@material-ui/icons";
+import WhatsAppIcon from "@material-ui/icons/WhatsApp";
+import Tooltip from "@material-ui/core/Tooltip";
+import ContactTagListModal from "../../components/ContactTagListModal";
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "LOAD_TAGS":
+      return [...state, ...action.payload];
+    case "UPDATE_TAGS":
+      const tag = action.payload;
+      const tagIndex = state.findIndex((s) => s.id === tag.id);
+
+      if (tagIndex !== -1) {
+        state[tagIndex] = tag;
+        return [...state];
+      } else {
+        return [tag, ...state];
+      }
+    case "DELETE_TAGS":
+      const tagId = action.payload;
+      return state.filter((tag) => tag.id !== tagId);
+    case "RESET":
+      return [];
+    default:
+      return state;
+  }
+};
+
+const useStyles = makeStyles((theme) => ({
+  mainPaper: {
+    flex: 1,
+    padding: theme.spacing(1),
+    overflowY: "scroll",
+    ...theme.scrollbarStyles,
+  },
+}));
+
+const Tags = () => {
+  const classes = useStyles();
+  const { user, socket } = useContext(AuthContext);
+
+  const [selectedTagContacts, setSelectedTagContacts] = useState([]);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [pageSize, setPageSize] = useState(50);
+  const [selectedTagName, setSelectedTagName] = useState("");
+  const [selectedTag, setSelectedTag] = useState(null);
+  const [deletingTag, setDeletingTag] = useState(null);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [searchParam, setSearchParam] = useState("");
+  const [tags, dispatch] = useReducer(reducer, []);
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const pageNumberRef = useRef(1);
+  const [importingLabels, setImportingLabels] = useState(false);
+  const [whatsapps, setWhatsapps] = useState([]);
+  const [importMenuAnchor, setImportMenuAnchor] = useState(null);
+
+  useEffect(() => {
+    const fetchWhatsapps = async () => {
+      try {
+        const { data } = await api.get("/whatsapp");
+        const connected = (data || []).filter(w => w.status === "CONNECTED");
+        setWhatsapps(connected);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchWhatsapps();
+  }, []);
+
+  const handleImportLabels = async (whatsappId) => {
+    setImportMenuAnchor(null);
+    setImportingLabels(true);
+    try {
+      let totalImported = 0;
+      let totalUpdated = 0;
+      if (whatsappId === "all") {
+        for (const wp of whatsapps) {
+          const { data } = await api.post(`/tags/import-labels/${wp.id}`);
+          totalImported += data.imported || 0;
+          totalUpdated += data.updated || 0;
+        }
+      } else {
+        const { data } = await api.post(`/tags/import-labels/${whatsappId}`);
+        totalImported += data.imported || 0;
+        totalUpdated += data.updated || 0;
+      }
+      toast.success(`Labels importadas: ${totalImported} novas, ${totalUpdated} atualizadas`);
+      dispatch({ type: "RESET" });
+      setPageNumber(1);
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setImportingLabels(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      const fetchMoreTags = async () => {
+        try {
+          const { data } = await api.get("/tags/", {
+            params: { searchParam, pageNumber, kanban: 0, limit: pageSize },
+          });
+          dispatch({ type: "LOAD_TAGS", payload: data.tags });
+          setHasMore(data.hasMore);
+          setLoading(false);
+        } catch (err) {
+          toastError(err);
+        }
+      };
+
+      if (pageNumber > 0) {
+        setLoading(true);
+        fetchMoreTags();
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchParam, pageNumber, pageSize]);
+
+  useEffect(() => {
+    const onCompanyTags = (data) => {
+      if (data.action === "update" || data.action === "create") {
+        dispatch({ type: "UPDATE_TAGS", payload: data.tag });
+      }
+
+      if (data.action === "delete") {
+        dispatch({ type: "DELETE_TAGS", payload: +data.tagId });
+      }
+    };
+    socket.on(`company${user.companyId}-tag`, onCompanyTags);
+
+    return () => {
+      socket.off(`company${user.companyId}-tag`, onCompanyTags);
+    };
+  }, [socket, user.companyId]);
+
+  const handleOpenTagModal = () => {
+    setSelectedTag(null);
+    setTagModalOpen(true);
+  };
+
+  const handleCloseTagModal = () => {
+    setSelectedTag(null);
+    setTagModalOpen(false);
+  };
+
+  const handleSearch = (event) => {
+    const newSearchParam = event.target.value.toLowerCase();
+    setSearchParam(newSearchParam);
+    setPageNumber(1);
+    dispatch({ type: "RESET" });
+  };
+
+  const handlePageSizeChange = (event) => {
+    const newSize = Number(event.target.value);
+    setPageSize(newSize);
+    setPageNumber(1);
+    dispatch({ type: "RESET" });
+  };
+
+  const handleEditTag = (tag) => {
+    setSelectedTag(tag);
+    setTagModalOpen(true);
+  };
+
+  const handleShowContacts = (contacts, tag) => {
+    setSelectedTagContacts(contacts);
+    setContactModalOpen(true);
+    setSelectedTagName(tag);
+  };
+
+  const handleCloseContactModal = () => {
+    setContactModalOpen(false);
+    setSelectedTagContacts([]);
+    setSelectedTagName("");
+  };
+
+  const handleDeleteTag = async (tagId) => {
+    try {
+      await api.delete(`/tags/${tagId}`);
+      toast.success(i18n.t("tags.toasts.deleted"));
+    } catch (err) {
+      toastError(err);
+    }
+    setDeletingTag(null);
+    setSearchParam("");
+    setPageNumber(1);
+  };
+
+  const loadMore = () => {
+    setPageNumber((prevPageNumber) => prevPageNumber + 1);
+  };
+
+  const handleScroll = (e) => {
+    if (!hasMore || loading) return;
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - (scrollTop + 100) < clientHeight) {
+      loadMore();
+    }
+  };
+
+  return (
+    <MainContainer className={classes.mainContainer}>
+      {contactModalOpen && (
+        <ContactTagListModal
+          open={contactModalOpen}
+          onClose={handleCloseContactModal}
+          tag={selectedTagName}
+        />
+      )}
+      <ConfirmationModal
+        title={deletingTag && `${i18n.t("tags.confirmationModal.deleteTitle")}`}
+        open={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        onConfirm={() => handleDeleteTag(deletingTag.id)}
+      >
+        {i18n.t("tags.confirmationModal.deleteMessage")}
+      </ConfirmationModal>
+      <TagModal
+        open={tagModalOpen}
+        onClose={handleCloseTagModal}
+        aria-labelledby="form-dialog-title"
+        tagId={selectedTag && selectedTag.id}
+        kanban={0}
+      />
+      <MainHeader>
+        <Title>{i18n.t("tags.title")} ({tags.length})</Title>
+        <MainHeaderButtonsWrapper>
+            <FormControl variant="outlined" size="small" style={{ minWidth: 140 }}>
+              <InputLabel id="page-size-label">Itens/página</InputLabel>
+              <Select
+                labelId="page-size-label"
+                value={pageSize}
+                onChange={handlePageSizeChange}
+                label="Itens/página"
+              >
+                <MenuItem value={20}>20</MenuItem>
+                <MenuItem value={50}>50</MenuItem>
+                <MenuItem value={100}>100</MenuItem>
+              </Select>
+            </FormControl>
+          <TextField
+            placeholder={i18n.t("contacts.searchPlaceholder")}
+            type="search"
+            value={searchParam}
+            onChange={handleSearch}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon style={{ color: "gray" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <ButtonGroup variant="outlined" color="primary" disabled={importingLabels || whatsapps.length === 0}>
+            <Button
+              onClick={() => whatsapps.length === 1 ? handleImportLabels(whatsapps[0].id) : handleImportLabels("all")}
+              startIcon={importingLabels ? <CircularProgress size={16} /> : <CloudDownload />}
+            >
+              {importingLabels ? "Importando..." : "Importar Labels"}
+            </Button>
+            {whatsapps.length > 1 && (
+              <Button
+                size="small"
+                onClick={(e) => setImportMenuAnchor(e.currentTarget)}
+              >
+                <ArrowDropDownIcon />
+              </Button>
+            )}
+          </ButtonGroup>
+          <Menu
+            anchorEl={importMenuAnchor}
+            open={Boolean(importMenuAnchor)}
+            onClose={() => setImportMenuAnchor(null)}
+            PaperProps={{ style: { backgroundColor: "white", zIndex: 1300 } }}
+          >
+            <MenuItem onClick={() => handleImportLabels("all")}>
+              Todas as conexões
+            </MenuItem>
+            {whatsapps.map((wp) => (
+              <MenuItem key={wp.id} onClick={() => handleImportLabels(wp.id)}>
+                {wp.name} {wp.number ? `(${wp.number})` : ""}
+              </MenuItem>
+            ))}
+          </Menu>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleOpenTagModal}
+          >
+            {i18n.t("tags.buttons.add")}
+          </Button>
+        </MainHeaderButtonsWrapper>
+      </MainHeader>
+      <Paper
+        className={classes.mainPaper}
+        variant="outlined"
+        onScroll={handleScroll}
+      >
+        <Table size="small" stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell align="center">{i18n.t("tags.table.id")}</TableCell>
+              <TableCell align="center">{i18n.t("tags.table.name")}</TableCell>
+              <TableCell align="center">
+                {i18n.t("tags.table.contacts")}
+              </TableCell>
+              <TableCell align="center">
+                {i18n.t("tags.table.actions")}
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <>
+              {tags.map((tag) => (
+                <TableRow key={tag.id}>
+                  <TableCell align="center">{tag.id}</TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      variant="outlined"
+                      style={{
+                        backgroundColor: tag.color,
+                        textShadow: "1px 1px #000",
+                        color: "white",
+                      }}
+                      label={tag.name}
+                      size="small"
+                    />
+                    {tag.whatsappLabelId && (
+                      <Tooltip title={`Sincronizada com WhatsApp (Label ID: ${tag.whatsappLabelId})`}>
+                        <WhatsAppIcon style={{ fontSize: 16, color: "#25D366", marginLeft: 4, verticalAlign: "middle" }} />
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    {tag?.contacts?.length}
+                    <IconButton
+                      size="small"
+                      onClick={() => handleShowContacts(tag?.contacts, tag)}
+                      disabled={tag?.contacts?.length === 0}
+                    >
+                      <MoreHoriz />
+                    </IconButton>
+                  </TableCell>
+
+                  <TableCell align="center">
+                    <IconButton size="small" onClick={() => handleEditTag(tag)}>
+                      <EditIcon />
+                    </IconButton>
+
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        setConfirmModalOpen(true);
+                        setDeletingTag(tag);
+                      }}
+                    >
+                      <DeleteOutlineIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+
+              {loading && Array.from({ length: 5 }).map((_, idx) => (
+                <TableRowSkeleton key={`skeleton-${idx}`} columns={4} />
+              ))}
+            </>
+          </TableBody>
+        </Table>
+        {hasMore && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 8 }}>
+            <Button variant="outlined" color="primary" onClick={loadMore} disabled={loading}>
+              {loading ? i18n.t("contacts.loading") : i18n.t("contacts.loadMore")}
+            </Button>
+          </div>
+        )}
+      </Paper>
+    </MainContainer>
+  );
+};
+
+export default Tags;

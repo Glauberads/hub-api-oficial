@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title id="page-title">Carregando sistema</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;600&display=swap"
+    />
+
+    <script>
+      (function () {
+        function parseCssColor(value) {
+          const color = String(value || "").trim();
+          let match = color.match(/^#([0-9a-f]{3})$/i);
+
+          if (match) {
+            return match[1].split("").map(function (part) {
+              return parseInt(part + part, 16);
+            });
+          }
+
+          match = color.match(/^#([0-9a-f]{6})(?:[0-9a-f]{2})?$/i);
+          if (match) {
+            return [
+              parseInt(match[1].slice(0, 2), 16),
+              parseInt(match[1].slice(2, 4), 16),
+              parseInt(match[1].slice(4, 6), 16),
+            ];
+          }
+
+          match = color.match(
+            /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i,
+          );
+          if (match) {
+            return match.slice(1, 4).map(function (part) {
+              return Math.max(0, Math.min(255, Number(part)));
+            });
+          }
+
+          return null;
+        }
+
+        function toHex(rgb) {
+          return (
+            "#" +
+            rgb
+              .map(function (part) {
+                return Math.round(part).toString(16).padStart(2, "0");
+              })
+              .join("")
+          );
+        }
+
+        function applyWhitelabelColor(value) {
+          const rgb = parseCssColor(value);
+          if (!rgb) return false;
+
+          const channels = rgb.map(function (part) {
+            const normalized = part / 255;
+            return normalized <= 0.03928
+              ? normalized / 12.92
+              : Math.pow((normalized + 0.055) / 1.055, 2.4);
+          });
+          const luminance =
+            channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+          const darken = luminance > 0.42 ? 0.52 : 0;
+          const inkRgb = rgb.map(function (part) {
+            return part * (1 - darken);
+          });
+          const rootStyle = document.documentElement.style;
+
+          rootStyle.setProperty("--accent", toHex(rgb));
+          rootStyle.setProperty("--accent-ink", toHex(inkRgb));
+          rootStyle.setProperty("--accent-rgb", rgb.join(", "));
+          rootStyle.setProperty(
+            "--accent-soft",
+            `rgba(${rgb.join(", ")}, 0.09)`,
+          );
+          rootStyle.setProperty(
+            "--accent-glow",
+            `rgba(${rgb.join(", ")}, 0.2)`,
+          );
+          rootStyle.setProperty(
+            "--brand-wash",
+            `rgba(${rgb.join(", ")}, 0.075)`,
+          );
+          return true;
+        }
+
+        function resolveBackendUrl() {
+          const configuredUrl = "%REACT_APP_BACKEND_URL%";
+
+          if (configuredUrl && configuredUrl.indexOf("%REACT_APP_") === -1) {
+            return configuredUrl.replace(/\/+$/, "");
+          }
+
+          return window.location.origin.replace(/\/+$/, "");
+        }
+
+        function extractSettingValue(payload) {
+          if (typeof payload === "string") return payload;
+          if (!payload || typeof payload !== "object") return "";
+
+          return (
+            payload.value ||
+            (payload.data &&
+              (typeof payload.data === "string"
+                ? payload.data
+                : payload.data.value)) ||
+            (payload.setting && payload.setting.value) ||
+            ""
+          );
+        }
+
+        async function loadWhitelabelPrimaryColor(companyId) {
+          const controller = new AbortController();
+          const timeout = setTimeout(function () {
+            controller.abort();
+          }, 3000);
+
+          try {
+            const backendUrl = resolveBackendUrl();
+            const params = new URLSearchParams();
+            if (companyId) params.set("companyId", companyId);
+            params.set("t", Date.now());
+
+            const response = await fetch(
+              backendUrl +
+                "/public-settings/primaryColorLight?" +
+                params.toString(),
+              {
+                cache: "no-store",
+                signal: controller.signal,
+              },
+            );
+
+            if (!response.ok) return "";
+
+            const rawPayload = await response.text();
+            let payload = rawPayload;
+
+            try {
+              payload = JSON.parse(rawPayload);
+            } catch (_) {}
+
+            const color = String(extractSettingValue(payload) || "").trim();
+            return parseCssColor(color) ? color : "";
+          } catch (error) {
+            console.warn(
+              "Não foi possível carregar primaryColorLight do Whitelabel:",
+              error,
+            );
+            return "";
+          } finally {
+            clearTimeout(timeout);
+          }
+        }
+
+        async function loadDynamicPWAConfig() {
+          try {
+            const queryParams = new URLSearchParams(window.location.search);
+            const tenantId =
+              localStorage.getItem("companyId") ||
+              sessionStorage.getItem("companyId") ||
+              queryParams.get("companyId") ||
+              queryParams.get("tenantId") ||
+              "";
+            const primaryColor = await loadWhitelabelPrimaryColor(tenantId);
+            const primaryColorApplied = applyWhitelabelColor(primaryColor);
+
+            const manifestHref =
+              "/manifest.json?tenantId=" +
+              encodeURIComponent(tenantId || "") +
+              "&t=" +
+              Date.now();
+
+            const oldManifests = document.querySelectorAll(
+              'link[rel="manifest"]',
+            );
+            oldManifests.forEach(function (link) {
+              link.remove();
+            });
+
+            const oldIcons = document.querySelectorAll(
+              'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
+            );
+            oldIcons.forEach(function (link) {
+              link.remove();
+            });
+
+            const manifestLink = document.createElement("link");
+            manifestLink.rel = "manifest";
+            manifestLink.href = manifestHref;
+            document.head.appendChild(manifestLink);
+
+            const response = await fetch(manifestHref, {
+              cache: "no-store",
+            });
+
+            if (!response.ok) {
+              throw new Error(
+                "Manifest dinâmico retornou status " + response.status,
+              );
+            }
+
+            const manifest = await response.json();
+
+            const effectiveThemeColor = primaryColorApplied
+              ? primaryColor
+              : manifest.theme_color;
+
+            if (effectiveThemeColor) {
+              if (!primaryColorApplied) {
+                applyWhitelabelColor(effectiveThemeColor);
+              }
+              const themeMeta = document.querySelector(
+                'meta[name="theme-color"]',
+              );
+              if (themeMeta) {
+                themeMeta.setAttribute("content", effectiveThemeColor);
+              }
+            }
+
+            if (manifest.icons && manifest.icons.length > 0) {
+              const icon512 =
+                manifest.icons.find(function (icon) {
+                  return String(icon.sizes || "").indexOf("512x512") !== -1;
+                }) || null;
+
+              const icon192 =
+                manifest.icons.find(function (icon) {
+                  return String(icon.sizes || "").indexOf("192x192") !== -1;
+                }) || null;
+
+              const selectedIcon = icon512 || icon192 || manifest.icons[0];
+
+              if (selectedIcon && selectedIcon.src) {
+                const iconSrc =
+                  selectedIcon.src +
+                  (String(selectedIcon.src).indexOf("?") === -1 ? "?" : "&") +
+                  "fav=" +
+                  Date.now();
+
+                const faviconLink = document.createElement("link");
+                faviconLink.rel = "icon";
+                faviconLink.type = selectedIcon.type || "image/png";
+                faviconLink.href = iconSrc;
+                document.head.appendChild(faviconLink);
+
+                const shortcutIcon = document.createElement("link");
+                shortcutIcon.rel = "shortcut icon";
+                shortcutIcon.type = selectedIcon.type || "image/png";
+                shortcutIcon.href = iconSrc;
+                document.head.appendChild(shortcutIcon);
+
+                const appleIcon = document.createElement("link");
+                appleIcon.rel = "apple-touch-icon";
+                appleIcon.href = iconSrc;
+                document.head.appendChild(appleIcon);
+              }
+            }
+
+            console.log("✅ PWA dinâmico carregado com sucesso");
+          } catch (error) {
+            console.error("❌ Erro ao carregar PWA dinâmico:", error);
+
+            const fallbackManifest = document.createElement("link");
+            fallbackManifest.rel = "manifest";
+            fallbackManifest.href = "/manifest.json?t=" + Date.now();
+            document.head.appendChild(fallbackManifest);
+
+            const fallbackIcon = document.createElement("link");
+            fallbackIcon.rel = "icon";
+            fallbackIcon.type = "image/png";
+            fallbackIcon.href = "/android-chrome-512x512.png?t=" + Date.now();
+            document.head.appendChild(fallbackIcon);
+
+            const fallbackAppleIcon = document.createElement("link");
+            fallbackAppleIcon.rel = "apple-touch-icon";
+            fallbackAppleIcon.href =
+              "/android-chrome-512x512.png?t=" + Date.now();
+            document.head.appendChild(fallbackAppleIcon);
+          }
+        }
+
+        loadDynamicPWAConfig();
+      })();
+    </script>
+
+    <meta name="theme-color" content="#f4f5f7" />
+    <meta
+      name="viewport"
+      content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no"
+    />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <style>
+      :root {
+        color-scheme: light;
+        --canvas: #f4f5f7;
+        --surface: rgba(255, 255, 255, 0.88);
+        --surface-solid: #ffffff;
+        --text: #18181b;
+        --muted: #71717a;
+        --subtle: #a1a1aa;
+        --line: rgba(24, 24, 27, 0.1);
+        --line-strong: rgba(24, 24, 27, 0.16);
+        --accent: #3f3f46;
+        --accent-ink: #3f3f46;
+        --accent-rgb: 63, 63, 70;
+        --accent-soft: rgba(63, 63, 70, 0.09);
+        --accent-glow: rgba(63, 63, 70, 0.2);
+        --brand-wash: rgba(63, 63, 70, 0.055);
+        --track: #e4e4e7;
+        --shadow:
+          0 24px 70px rgba(24, 24, 27, 0.12), 0 3px 12px rgba(24, 24, 27, 0.05);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: var(--canvas);
+        overflow: hidden;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        color: var(--text);
+      }
+
+      #splash-screen {
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(
+            circle at 50% 42%,
+            var(--brand-wash),
+            transparent 34%
+          ),
+          radial-gradient(
+            circle at 14% 12%,
+            rgba(255, 255, 255, 0.96),
+            transparent 30%
+          ),
+          radial-gradient(
+            circle at 88% 86%,
+            rgba(212, 212, 216, 0.42),
+            transparent 28%
+          ),
+          linear-gradient(145deg, #fafafa 0%, #f4f4f5 48%, #e9eaec 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        z-index: 9999;
+        opacity: 1;
+        isolation: isolate;
+        transition:
+          opacity 0.55s ease,
+          visibility 0.55s ease;
+      }
+
+      #splash-screen::before,
+      #splash-screen::after {
+        content: "";
+        position: absolute;
+        z-index: -1;
+        border-radius: 999px;
+        filter: blur(2px);
+        pointer-events: none;
+      }
+
+      #splash-screen::before {
+        width: min(46vw, 560px);
+        aspect-ratio: 1;
+        top: -28%;
+        right: -10%;
+        border: 1px solid rgba(113, 113, 122, 0.1);
+        box-shadow:
+          0 0 0 70px rgba(255, 255, 255, 0.18),
+          0 0 0 140px rgba(255, 255, 255, 0.1);
+      }
+
+      #splash-screen::after {
+        width: min(38vw, 460px);
+        aspect-ratio: 1;
+        left: -14%;
+        bottom: -28%;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(113, 113, 122, 0.08);
+      }
+
+      #splash-screen.fade-out {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      #splash-content {
+        position: relative;
+        width: min(100%, 440px);
+        overflow: hidden;
+        background: var(--surface);
+        backdrop-filter: blur(18px) saturate(115%);
+        -webkit-backdrop-filter: blur(18px) saturate(115%);
+        border: 1px solid rgba(255, 255, 255, 0.82);
+        outline: 1px solid var(--line);
+        border-radius: 26px;
+        box-shadow: var(--shadow);
+        padding: 42px 36px 34px;
+        text-align: center;
+        animation: fadeUp 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      #splash-content::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 18%;
+        width: 64%;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--subtle),
+          transparent
+        );
+        opacity: 0.48;
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(18px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.055em;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        border: 1px solid var(--line);
+      }
+
+      .badge::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-soft);
+        animation: badge-pulse 1.8s ease-in-out infinite;
+      }
+
+      .loading-title {
+        font-size: clamp(26px, 6vw, 30px);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: var(--text);
+        margin-bottom: 10px;
+      }
+
+      .loading-subtitle {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--muted);
+        line-height: 1.65;
+        max-width: 330px;
+        margin: 0 auto 28px;
+      }
+
+      .modern-loader {
+        display: flex;
+        justify-content: center;
+        gap: 7px;
+        margin-bottom: 26px;
+      }
+
+      .loader-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 2px 10px var(--accent-glow);
+        animation: dot-bounce 1.2s ease-in-out infinite;
+      }
+
+      .loader-dot:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      .loader-dot:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      @keyframes dot-bounce {
+        0%,
+        80%,
+        100% {
+          transform: scale(0.55);
+          opacity: 0.35;
+        }
+        40% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes badge-pulse {
+        0%,
+        100% {
+          opacity: 0.45;
+          transform: scale(0.82);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .circular-progress-container {
+        position: relative;
+        width: 106px;
+        height: 106px;
+        margin: 0 auto 12px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.76);
+        box-shadow:
+          inset 0 0 0 1px var(--line),
+          0 10px 24px rgba(24, 24, 27, 0.06);
+      }
+
+      .circular-progress {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+      }
+
+      .circular-progress circle {
+        fill: none;
+        stroke-width: 5;
+        stroke-linecap: round;
+      }
+
+      .circular-progress-bg {
+        stroke: var(--track);
+      }
+
+      .circular-progress-value {
+        stroke: var(--accent);
+        stroke-dasharray: 251.2;
+        stroke-dashoffset: 251.2;
+        transition: stroke-dashoffset 0.35s ease;
+      }
+
+      .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 15px;
+        font-weight: 700;
+        font-family: "Roboto Mono", monospace;
+        color: var(--text);
+        letter-spacing: -0.03em;
+      }
+
+      .status-message {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 18px;
+        min-height: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        transition: opacity 0.25s ease;
+      }
+
+      .status-message::before {
+        content: "";
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--subtle);
+      }
+
+      @media (max-width: 480px) {
+        #splash-content {
+          padding: 34px 22px 28px;
+          border-radius: 22px;
+        }
+
+        .loading-title {
+          font-size: 26px;
+        }
+
+        .loading-subtitle {
+          font-size: 13px;
+        }
+      }
+
+      @media (max-height: 580px) {
+        #splash-content {
+          transform: scale(0.9);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+
+    <script>
+      if (!crossOriginIsolated) SharedArrayBuffer = ArrayBuffer;
+    </script>
+  </head>
+
+  <body>
+    <div
+      id="splash-screen"
+      role="status"
+      aria-live="polite"
+      aria-label="Carregando sistema"
+    >
+      <div id="splash-content">
+        <div class="badge" id="splash-badge">Inicializando sistema</div>
+
+        <h1 class="loading-title" id="loading-title">Carregando</h1>
+        <p class="loading-subtitle" id="loading-subtitle">
+          Aguarde enquanto o ambiente está sendo preparado para você.
+        </p>
+
+        <div class="modern-loader" aria-hidden="true">
+          <div class="loader-dot"></div>
+          <div class="loader-dot"></div>
+          <div class="loader-dot"></div>
+        </div>
+
+        <div
+          class="circular-progress-container"
+          id="progress-container"
+          role="progressbar"
+          aria-label="Progresso do carregamento"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <svg class="circular-progress" viewBox="0 0 100 100">
+            <circle
+              class="circular-progress-bg"
+              cx="50"
+              cy="50"
+              r="40"
+            ></circle>
+            <circle
+              class="circular-progress-value"
+              id="progress-circle"
+              cx="50"
+              cy="50"
+              r="40"
+            ></circle>
+          </svg>
+          <div class="progress-text" id="progress-text">0%</div>
+        </div>
+
+        <div class="status-message" id="status-message">Inicializando...</div>
+      </div>
+    </div>
+
+    <div id="root"></div>
+    <noscript
+      >Você precisa habilitar o JavaScript para executar este sistema.</noscript
+    >
+
+    <script>
+      let progress = 0;
+      const progressCircle = document.getElementById("progress-circle");
+      const progressText = document.getElementById("progress-text");
+      const progressContainer = document.getElementById("progress-container");
+      const statusMessage = document.getElementById("status-message");
+
+      const circumference = 251.2;
+
+      const splashTranslations = {
+        pt: {
+          pageTitle: "Carregando sistema",
+          ariaLabel: "Carregando sistema",
+          progressLabel: "Progresso do carregamento",
+          badge: "Inicializando sistema",
+          title: "Carregando",
+          subtitle:
+            "Aguarde enquanto o ambiente está sendo preparado para você.",
+          initial: "Inicializando...",
+          opening: "Abrindo sistema...",
+          statuses: [
+            "Inicializando aplicação...",
+            "Carregando componentes...",
+            "Configurando interface...",
+            "Conectando serviços...",
+            "Preparando o ambiente...",
+            "Finalizando carregamento...",
+          ],
+        },
+        en: {
+          pageTitle: "Loading system",
+          ariaLabel: "Loading system",
+          progressLabel: "Loading progress",
+          badge: "Initializing system",
+          title: "Loading",
+          subtitle: "Please wait while your environment is being prepared.",
+          initial: "Initializing...",
+          opening: "Opening system...",
+          statuses: [
+            "Initializing application...",
+            "Loading components...",
+            "Configuring interface...",
+            "Connecting services...",
+            "Preparing environment...",
+            "Finishing loading...",
+          ],
+        },
+        es: {
+          pageTitle: "Cargando sistema",
+          ariaLabel: "Cargando sistema",
+          progressLabel: "Progreso de carga",
+          badge: "Inicializando sistema",
+          title: "Cargando",
+          subtitle: "Espera mientras preparamos el entorno para ti.",
+          initial: "Inicializando...",
+          opening: "Abriendo sistema...",
+          statuses: [
+            "Inicializando aplicación...",
+            "Cargando componentes...",
+            "Configurando interfaz...",
+            "Conectando servicios...",
+            "Preparando el entorno...",
+            "Finalizando la carga...",
+          ],
+        },
+      };
+
+      const resolveSplashLanguage = () => {
+        const queryLanguage = new URLSearchParams(window.location.search).get(
+          "lng",
+        );
+        const candidates = [
+          queryLanguage,
+          localStorage.getItem("i18nextLng"),
+          localStorage.getItem("language"),
+          sessionStorage.getItem("i18nextLng"),
+          document.documentElement.lang,
+          navigator.language,
+        ];
+
+        for (const candidate of candidates) {
+          const language = String(candidate || "")
+            .trim()
+            .toLowerCase()
+            .split(/[-_]/)[0];
+          if (splashTranslations[language]) return language;
+        }
+
+        return "pt";
+      };
+
+      const splashLanguage = resolveSplashLanguage();
+      const splashText = splashTranslations[splashLanguage];
+      const statusMessages = splashText.statuses;
+
+      document.documentElement.lang =
+        splashLanguage === "pt" ? "pt-BR" : splashLanguage;
+      document.getElementById("page-title").textContent = splashText.pageTitle;
+      document
+        .getElementById("splash-screen")
+        .setAttribute("aria-label", splashText.ariaLabel);
+      progressContainer.setAttribute("aria-label", splashText.progressLabel);
+      document.getElementById("splash-badge").textContent = splashText.badge;
+      document.getElementById("loading-title").textContent = splashText.title;
+      document.getElementById("loading-subtitle").textContent =
+        splashText.subtitle;
+      statusMessage.textContent = splashText.initial;
+
+      let messageIndex = 0;
+
+      const interval = setInterval(() => {
+        if (progress < 25) {
+          progress += Math.random() * 4 + 2;
+        } else if (progress < 50) {
+          progress += Math.random() * 3 + 1;
+        } else if (progress < 80) {
+          progress += Math.random() * 2 + 0.5;
+        } else if (progress < 95) {
+          progress += (95 - progress) / 10;
+        }
+
+        const currentProgress = Math.min(progress, 100);
+
+        const offset = circumference - (currentProgress / 100) * circumference;
+        progressCircle.style.strokeDashoffset = offset;
+        progressText.textContent = Math.floor(currentProgress) + "%";
+        progressContainer.setAttribute(
+          "aria-valuenow",
+          Math.floor(currentProgress),
+        );
+
+        const newMessageIndex = Math.floor(
+          (currentProgress / 100) * statusMessages.length,
+        );
+
+        if (
+          newMessageIndex !== messageIndex &&
+          newMessageIndex < statusMessages.length
+        ) {
+          messageIndex = newMessageIndex;
+          statusMessage.style.opacity = "0";
+
+          setTimeout(() => {
+            statusMessage.textContent = statusMessages[messageIndex];
+            statusMessage.style.opacity = "1";
+          }, 180);
+        }
+
+        if (progress >= 100) {
+          clearInterval(interval);
+          statusMessage.textContent = splashText.opening;
+
+          setTimeout(() => {
+            const splashScreen = document.getElementById("splash-screen");
+
+            if (splashScreen) {
+              splashScreen.classList.add("fade-out");
+
+              setTimeout(() => {
+                splashScreen.remove();
+              }, 700);
+            }
+          }, 700);
+        }
+      }, 120);
+
+      window.finishProgress = () => {
+        progress = 100;
+      };
+
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          if (progress < 85) progress = 85;
+        }, 700);
+      });
+
+      setTimeout(() => {
+        if (document.getElementById("splash-screen")) {
+          window.finishProgress();
+        }
+      }, 15000);
+    </script>
+  </body>
+</html>

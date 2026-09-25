@@ -1,0 +1,165 @@
+{
+  "namespace": "marketing",
+  "files": ["src/pages/LandingWebhooks/index.js", "src/pages/Campaigns/index.js"],
+  "entries": [
+    {"key":"landing.nameRequired","pt":"Informe o nome da integração.","en":"Enter the integration name.","es":"Ingrese el nombre de la integración."},
+    {"key":"landing.updated","pt":"Integração atualizada com sucesso.","en":"Integration updated successfully.","es":"Integración actualizada correctamente."},
+    {"key":"landing.created","pt":"Integração criada com sucesso.","en":"Integration created successfully.","es":"Integración creada correctamente."},
+    {"key":"landing.deleted","pt":"Integração excluída com sucesso.","en":"Integration deleted successfully.","es":"Integración eliminada correctamente."},
+    {"key":"landing.urlCopied","pt":"URL copiada.","en":"URL copied.","es":"URL copiada."},
+    {"key":"landing.success","pt":"Sucesso","en":"Success","es":"Correcto"},
+    {"key":"landing.partialSuccess","pt":"Lead ok / mensagem falhou","en":"Lead received / message failed","es":"Lead recibido / mensaje fallido"},
+    {"key":"landing.error","pt":"Erro","en":"Error","es":"Error"},
+    {"key":"landing.title","pt":"Landing Pages / Webhooks","en":"Landing pages / Webhooks","es":"Landing pages / Webhooks"},
+    {"key":"landing.edit","pt":"Editar integração","en":"Edit integration","es":"Editar integración"},
+    {"key":"landing.new","pt":"Nova integração","en":"New integration","es":"Nueva integración"},
+    {"key":"landing.newShort","pt":"Nova","en":"New","es":"Nueva"},
+    {"key":"landing.name","pt":"Nome da integração","en":"Integration name","es":"Nombre de la integración"},
+    {"key":"landing.nameExample","pt":"Landing Page - Disparador WhatsApp","en":"Landing page — WhatsApp trigger","es":"Landing page — Disparador de WhatsApp"},
+    {"key":"landing.whatsappConnection","pt":"Conexão WhatsApp","en":"WhatsApp connection","es":"Conexión de WhatsApp"},
+    {"key":"landing.select","pt":"Selecione","en":"Select","es":"Seleccione"},
+    {"key":"landing.noUser","pt":"Sem usuário","en":"No user","es":"Sin usuario"},
+    {"key":"landing.flow","pt":"Fluxo","en":"Flow","es":"Flujo"},
+    {"key":"landing.noFlow","pt":"Sem fluxo","en":"No flow","es":"Sin flujo"},
+    {"key":"landing.autoTags","pt":"Tags automáticas","en":"Automatic tags","es":"Etiquetas automáticas"},
+    {"key":"landing.tagsExample","pt":"Lead, Landing Page, Disparador","en":"Lead, Landing page, Trigger","es":"Lead, Landing page, Disparador"},
+    {"key":"landing.tagsHelp","pt":"Separe as tags por vírgula. As tags precisam existir no sistema para serem aplicadas.","en":"Separate tags with commas. Tags must already exist in the system to be applied.","es":"Separe las etiquetas con comas. Las etiquetas deben existir en el sistema para poder aplicarlas."},
+    {"key":"landing.autoMessage","pt":"Mensagem automática","en":"Automatic message","es":"Mensaje automático"},
+    {"key":"landing.variablesHelp","pt":"Variáveis aceitas: {{name}}, {{phone}}, {{email}}, {{product}}, {{source}}","en":"Accepted variables: {{name}}, {{phone}}, {{email}}, {{product}}, {{source}}","es":"Variables aceptadas: {{name}}, {{phone}}, {{email}}, {{product}}, {{source}}"},
+    {"key":"landing.sendAutoMessage","pt":"Enviar mensagem automática","en":"Send automatic message","es":"Enviar mensaje automático"},
+    {"key":"landing.startFlow","pt":"Iniciar fluxo automaticamente","en":"Start flow automatically","es":"Iniciar flujo automáticamente"},
+    {"key":"landing.active","pt":"Integração ativa","en":"Active integration","es":"Integración activa"},
+    {"key":"landing.saveChanges","pt":"Salvar alterações","en":"Save changes","es":"Guardar cambios"},
+    {"key":"landing.createIntegration","pt":"Criar integração","en":"Create integration","es":"Crear integración"},
+    {"key":"landing.createdIntegrations","pt":"Integrações criadas","en":"Created integrations","es":"Integraciones creadas"},
+    {"key":"landing.webhookUrl","pt":"URL do Webhook","en":"Webhook URL","es":"URL del webhook"},
+    {"key":"landing.whatsappId","pt":"WhatsApp ID:","en":"WhatsApp ID:","es":"ID de WhatsApp:"},
+    {"key":"landing.queueId","pt":"| Fila ID:","en":"| Queue ID:","es":"| ID de cola:"},
+    {"key":"landing.copyUrl","pt":"Copiar URL","en":"Copy URL","es":"Copiar URL"},
+    {"key":"landing.empty","pt":"Nenhuma integração criada ainda.","en":"No integrations created yet.","es":"Aún no se han creado integraciones."},
+    {"key":"landing.latestLeads","pt":"Últimos leads recebidos","en":"Latest leads received","es":"Últimos leads recibidos"},
+    {"key":"landing.noLeads","pt":"Nenhum lead recebido ainda.","en":"No leads received yet.","es":"Aún no se han recibido leads."},
+    {"key":"landing.connectionNumber","pt":"Conexão {{id}}","en":"Connection {{id}}","es":"Conexión {{id}}"},
+    {"key":"landing.userNumber","pt":"Usuário {{id}}","en":"User {{id}}","es":"Usuario {{id}}"},
+    {"key":"campaigns.noPermission","pt":"Esta empresa não possui permissão para acessar essa página! Estamos lhe redirecionando.","en":"This company does not have permission to access this page. You are being redirected.","es":"Esta empresa no tiene permiso para acceder a esta página. Será redirigido."},
+    {"key":"campaigns.recurrenceStopped","pt":"Recorrência interrompida com sucesso!","en":"Recurrence stopped successfully!","es":"¡Recurrencia detenida correctamente!"},
+    {"key":"campaigns.stopRecurrence","pt":"Interromper Recorrência","en":"Stop recurrence","es":"Detener recurrencia"},
+    {"key":"campaigns.stopConfirmation","pt":"Tem certeza que deseja interromper a recorrência desta campanha? A campanha atual continuará sendo executada, mas não haverão mais execuções futuras.","en":"Are you sure you want to stop this campaign's recurrence? The current campaign will continue, but there will be no future runs.","es":"¿Está seguro de que desea detener la recurrencia de esta campaña? La campaña actual continuará, pero no habrá ejecuciones futuras."},
+    {"key":"campaigns.all","pt":"Todas","en":"All","es":"Todas"},
+    {"key":"campaigns.recurring","pt":"Recorrentes","en":"Recurring","es":"Recurrentes"},
+    {"key":"campaigns.oneTimePlural","pt":"Únicas","en":"One-time","es":"Únicas"},
+    {"key":"campaigns.channelProvider","pt":"Canal/Provedor","en":"Channel/Provider","es":"Canal/Proveedor"},
+    {"key":"campaigns.nextExecution","pt":"Próxima Execução","en":"Next run","es":"Próxima ejecución"},
+    {"key":"campaigns.recurringCampaign","pt":"Campanha Recorrente","en":"Recurring campaign","es":"Campaña recurrente"},
+    {"key":"campaigns.whatsapp","pt":"WhatsApp","en":"WhatsApp","es":"WhatsApp"},
+    {"key":"campaigns.oneTime","pt":"Única","en":"One-time","es":"Única"},
+    {"key":"campaigns.removed","pt":"Removida","en":"Removed","es":"Eliminada"},
+    {"key":"campaigns.continuesAt","pt":"Continua às","en":"Continues at","es":"Continúa a las"},
+    {"key":"campaigns.notCompleted","pt":"Não concluída","en":"Not completed","es":"No completada"},
+    {"key":"campaigns.stopCampaign","pt":"Parar Campanha","en":"Stop campaign","es":"Detener campaña"},
+    {"key":"campaigns.restartCampaign","pt":"Reiniciar Campanha","en":"Restart campaign","es":"Reiniciar campaña"},
+    {"key":"campaigns.report","pt":"Relatório","en":"Report","es":"Informe"},
+    {"key":"campaigns.total","pt":"Total:","en":"Total:","es":"Total:"},
+    {"key":"campaigns.campaigns","pt":"campanhas","en":"campaigns","es":"campañas"}
+    ,{"key":"campaigns.status.inactive","pt":"Inativa","en":"Inactive","es":"Inactiva"}
+    ,{"key":"campaigns.status.scheduled","pt":"Programada","en":"Scheduled","es":"Programada"}
+    ,{"key":"campaigns.status.inProgress","pt":"Em Andamento","en":"In progress","es":"En curso"}
+    ,{"key":"campaigns.status.cancelled","pt":"Cancelada","en":"Cancelled","es":"Cancelada"}
+    ,{"key":"campaigns.status.finished","pt":"Finalizada","en":"Finished","es":"Finalizada"}
+    ,{"key":"campaigns.recurrence.minutely","pt":"Por Minuto","en":"Every minute","es":"Cada minuto"}
+    ,{"key":"campaigns.recurrence.hourly","pt":"Por Hora","en":"Hourly","es":"Cada hora"}
+    ,{"key":"campaigns.recurrence.daily","pt":"Diário","en":"Daily","es":"Diaria"}
+    ,{"key":"campaigns.recurrence.weekly","pt":"Semanal","en":"Weekly","es":"Semanal"}
+    ,{"key":"campaigns.recurrence.biweekly","pt":"Quinzenal","en":"Every two weeks","es":"Quincenal"}
+    ,{"key":"campaigns.recurrence.monthly","pt":"Mensal","en":"Monthly","es":"Mensual"}
+    ,{"key":"campaigns.recurrence.yearly","pt":"Anual","en":"Yearly","es":"Anual"}
+    ,{"key":"campaigns.removedList","pt":"Lista removida","en":"Removed list","es":"Lista eliminada"}
+    ,{"key":"campaigns.tagPrefix","pt":"Tag: {{tag}}","en":"Tag: {{tag}}","es":"Etiqueta: {{tag}}"}
+    ,{"key":"campaigns.rowsPerPage","pt":"Linhas por página:","en":"Rows per page:","es":"Filas por página:"}
+    ,{"key":"campaigns.displayedRows","pt":"{{from}}-{{to}} de {{count}}","en":"{{from}}-{{to}} of {{count}}","es":"{{from}}-{{to}} de {{count}}"}
+    ,{"key":"campaigns.moreThan","pt":"mais de {{count}}","en":"more than {{count}}","es":"más de {{count}}"}
+    ,{"key":"report.delivered","pt":"Entregues","en":"Delivered","es":"Entregados"}
+    ,{"key":"report.pending","pt":"Aguardando","en":"Pending","es":"Pendientes"}
+    ,{"key":"report.failed","pt":"Falhas","en":"Failed","es":"Fallidos"}
+    ,{"key":"report.deliveredSingle","pt":"Entregue","en":"Delivered","es":"Entregado"}
+    ,{"key":"report.failedSingle","pt":"Falha","en":"Failed","es":"Fallido"}
+    ,{"key":"report.unknown","pt":"Desconhecido","en":"Unknown","es":"Desconocido"}
+    ,{"key":"report.deliveryStatus","pt":"Status de Entrega","en":"Delivery Status","es":"Estado de Entrega"}
+    ,{"key":"report.uniqueRecipients","pt":"Destinatários Únicos","en":"Unique Recipients","es":"Destinatarios Únicos"}
+    ,{"key":"report.deliveredMessages","pt":"Mensagens Entregues","en":"Delivered Messages","es":"Mensajes Entregados"}
+    ,{"key":"report.whatsappConnection","pt":"Conexão WhatsApp","en":"WhatsApp Connection","es":"Conexión de WhatsApp"}
+    ,{"key":"report.usedTag","pt":"Tag Utilizada","en":"Tag Used","es":"Etiqueta Utilizada"}
+    ,{"key":"report.notSpecified","pt":"Não especificado","en":"Not specified","es":"No especificado"}
+    ,{"key":"report.notScheduled","pt":"Não agendado","en":"Not scheduled","es":"No programado"}
+    ,{"key":"report.notCompleted","pt":"Não concluído","en":"Not completed","es":"No completado"}
+    ,{"key":"report.messageDetails","pt":"Detalhes das Mensagens","en":"Message Details","es":"Detalles de los Mensajes"}
+    ,{"key":"report.exportExcel","pt":"Exportar Excel","en":"Export Excel","es":"Exportar Excel"}
+    ,{"key":"report.recipient","pt":"Destinatário","en":"Recipient","es":"Destinatario"}
+    ,{"key":"report.sentAt","pt":"Enviado em","en":"Sent At","es":"Enviado el"}
+    ,{"key":"report.deliveredAt","pt":"Entregue em","en":"Delivered At","es":"Entregado el"}
+    ,{"key":"report.noMessages","pt":"Nenhuma mensagem encontrada","en":"No messages found","es":"No se encontraron mensajes"}
+    ,{"key":"report.rowsPerPage","pt":"Linhas por página:","en":"Rows per page:","es":"Filas por página:"}
+    ,{"key":"report.displayedRows","pt":"{{from}}-{{to}} de {{count}}","en":"{{from}}-{{to}} of {{count}}","es":"{{from}}-{{to}} de {{count}}"}
+    ,{"key":"modal.contactListsTab","pt":"Listas de Contatos","en":"Contact Lists","es":"Listas de Contactos"}
+    ,{"key":"modal.settingsTab","pt":"Configurações","en":"Settings","es":"Configuración"}
+    ,{"key":"modal.recurrenceSettings","pt":"Configuração de Recorrência","en":"Recurrence Settings","es":"Configuración de Recurrencia"}
+    ,{"key":"modal.enableRecurrence","pt":"Habilitar recorrência","en":"Enable recurrence","es":"Habilitar recurrencia"}
+    ,{"key":"modal.attachMedia","pt":"Anexar Mídia","en":"Attach Media","es":"Adjuntar Multimedia"}
+    ,{"key":"modal.preview","pt":"Pré-visualização","en":"Preview","es":"Vista Previa"}
+    ,{"key":"modal.sendingIntervals","pt":"Intervalos de Disparo","en":"Sending Intervals","es":"Intervalos de Envío"}
+    ,{"key":"modal.sendingIntervalsHelp","pt":"Configure os intervalos de tempo entre os disparos desta campanha para evitar bloqueios.","en":"Configure the time intervals between this campaign's sends to avoid blocks.","es":"Configure los intervalos entre los envíos de esta campaña para evitar bloqueos."}
+    ,{"key":"modal.antiBanHelp","pt":"Humaniza o disparo para reduzir risco de bloqueio","en":"Makes sending more natural to reduce the risk of blocking","es":"Humaniza el envío para reducir el riesgo de bloqueo"}
+    ,{"key":"modal.extraPauseEvery","pt":"Pausa extra a cada N mensagens","en":"Extra pause every N messages","es":"Pausa extra cada N mensajes"}
+    ,{"key":"modal.everyMessages","pt":"A cada {{amount}} mensagens","en":"Every {{amount}} messages","es":"Cada {{amount}} mensajes"}
+    ,{"key":"modal.extraPauseDuration","pt":"Duração da pausa extra","en":"Extra pause duration","es":"Duración de la pausa extra"}
+    ,{"key":"modal.seconds","pt":"{{amount}} segundos","en":"{{amount}} seconds","es":"{{amount}} segundos"}
+    ,{"key":"modal.minutes","pt":"{{amount}} minuto(s)","en":"{{amount}} minute(s)","es":"{{amount}} minuto(s)"}
+    ,{"key":"modal.jitter","pt":"Variação aleatória (jitter)","en":"Random variation (jitter)","es":"Variación aleatoria (jitter)"}
+    ,{"key":"modal.jitterRange","pt":"Base {{base}}s → entre {{min}}s e {{max}}s","en":"Base {{base}}s → between {{min}}s and {{max}}s","es":"Base {{base}}s → entre {{min}}s y {{max}}s"}
+    ,{"key":"selector.description","pt":"Crie listas, importe contatos e selecione a lista que será usada nesta campanha.","en":"Create lists, import contacts, and select the list to use in this campaign.","es":"Cree listas, importe contactos y seleccione la lista que se usará en esta campaña."}
+    ,{"key":"selector.simpleList","pt":"Lista Simples","en":"Simple List","es":"Lista Simple"}
+    ,{"key":"selector.newExcelList","pt":"Nova Lista + Excel","en":"New List + Excel","es":"Nueva Lista + Excel"}
+    ,{"key":"selector.selectedList","pt":"Lista selecionada: {{name}}","en":"Selected list: {{name}}","es":"Lista seleccionada: {{name}}"}
+    ,{"key":"selector.contactsUsed","pt":"{{count}} contatos — esta lista será usada na campanha","en":"{{count}} contacts — this list will be used in the campaign","es":"{{count}} contactos — esta lista se usará en la campaña"}
+    ,{"key":"selector.remove","pt":"Remover","en":"Remove","es":"Eliminar"}
+    ,{"key":"selector.search","pt":"Buscar lista...","en":"Search list...","es":"Buscar lista..."}
+    ,{"key":"selector.empty","pt":"Nenhuma lista criada ainda.","en":"No lists created yet.","es":"Aún no se han creado listas."}
+    ,{"key":"selector.emptyHelp","pt":"Clique em Nova Lista para começar.","en":"Click New List to get started.","es":"Haga clic en Nueva Lista para comenzar."}
+    ,{"key":"editor.interactiveButtons","pt":"Botões interativos da campanha","en":"Campaign interactive buttons","es":"Botones interactivos de la campaña"}
+    ,{"key":"editor.interactiveButtonsHelp","pt":"Disponível somente para conexões WhatsApp via Baileys. Máximo de cinco botões.","en":"Available only for WhatsApp connections via Baileys. Maximum of five buttons.","es":"Disponible solo para conexiones de WhatsApp mediante Baileys. Máximo de cinco botones."}
+    ,{"key":"editor.addButton","pt":"Adicionar botão","en":"Add button","es":"Agregar botón"}
+    ,{"key":"editor.noButtons","pt":"Nenhum botão configurado. A campanha continuará enviando a mensagem normalmente.","en":"No buttons configured. The campaign will continue sending the message normally.","es":"No hay botones configurados. La campaña seguirá enviando el mensaje normalmente."}
+    ,{"key":"editor.quickReply","pt":"Resposta rápida","en":"Quick reply","es":"Respuesta rápida"}
+    ,{"key":"editor.openUrl","pt":"Abrir URL","en":"Open URL","es":"Abrir URL"}
+    ,{"key":"editor.copyCode","pt":"Copiar código","en":"Copy code","es":"Copiar código"}
+    ,{"key":"editor.call","pt":"Ligar","en":"Call","es":"Llamar"}
+    ,{"key":"editor.buttonText","pt":"Texto do botão","en":"Button text","es":"Texto del botón"}
+    ,{"key":"editor.fullUrl","pt":"URL completa","en":"Full URL","es":"URL completa"}
+    ,{"key":"editor.codeToCopy","pt":"Código para copiar","en":"Code to copy","es":"Código para copiar"}
+    ,{"key":"editor.internationalPhone","pt":"Telefone com DDI","en":"Phone with country code","es":"Teléfono con código de país"}
+    ,{"key":"editor.replyId","pt":"Identificador da resposta","en":"Reply identifier","es":"Identificador de respuesta"}
+    ,{"key":"editor.removeButton","pt":"Remover botão","en":"Remove button","es":"Eliminar botón"}
+    ,{"key":"editor.campaignMessage","pt":"Mensagem da Campanha","en":"Campaign Message","es":"Mensaje de la Campaña"}
+    ,{"key":"editor.name","pt":"Nome","en":"Name","es":"Nombre"}
+    ,{"key":"editor.number","pt":"Número","en":"Number","es":"Número"}
+    ,{"key":"editor.email","pt":"E-mail","en":"Email","es":"Correo"}
+    ,{"key":"editor.greeting","pt":"Saudação","en":"Greeting","es":"Saludo"}
+    ,{"key":"editor.protocol","pt":"Protocolo","en":"Protocol","es":"Protocolo"}
+    ,{"key":"editor.firstName","pt":"Primeiro Nome","en":"First Name","es":"Primer Nombre"}
+    ,{"key":"editor.attendant","pt":"Atendente","en":"Agent","es":"Agente"}
+    ,{"key":"editor.campaignContactList","pt":"Lista de Contatos da Campanha","en":"Campaign Contact List","es":"Lista de Contactos de la Campaña"}
+    ,{"key":"editor.campaignContactListHelp","pt":"Selecione uma lista criada na aba Listas de Contatos. A lista define quem receberá as mensagens desta campanha.","en":"Select a list created in the Contact Lists tab. The list defines who will receive this campaign's messages.","es":"Seleccione una lista creada en la pestaña Listas de Contactos. La lista define quién recibirá los mensajes de esta campaña."}
+    ,{"key":"editor.noListSelected","pt":"Nenhuma lista selecionada","en":"No list selected","es":"Ninguna lista seleccionada"}
+    ,{"key":"editor.contactsCount","pt":"{{count}} contatos","en":"{{count}} contacts","es":"{{count}} contactos"}
+    ,{"key":"editor.filterTag","pt":"Filtrar por Tag (opcional)","en":"Filter by Tag (optional)","es":"Filtrar por Etiqueta (opcional)"}
+    ,{"key":"editor.noTagFilter","pt":"Sem filtro de tag","en":"No tag filter","es":"Sin filtro de etiqueta"}
+    ,{"key":"editor.changeList","pt":"Trocar lista → Ir para Listas de Contatos","en":"Change list → Go to Contact Lists","es":"Cambiar lista → Ir a Listas de Contactos"}
+    ,{"key":"editor.createOrSelectList","pt":"+ Criar ou selecionar lista na aba Listas de Contatos","en":"+ Create or select a list in the Contact Lists tab","es":"+ Crear o seleccionar una lista en la pestaña Listas de Contactos"}
+    ,{"key":"preview.title","pt":"Pré-visualização da Mensagem","en":"Message Preview","es":"Vista Previa del Mensaje"}
+    ,{"key":"preview.subtitle","pt":"Visualize como a mensagem aparecerá no WhatsApp","en":"See how the message will appear on WhatsApp","es":"Vea cómo aparecerá el mensaje en WhatsApp"}
+    ,{"key":"preview.online","pt":"online","en":"online","es":"en línea"}
+    ,{"key":"preview.empty","pt":"Digite uma mensagem para ver a pré-visualização aqui","en":"Type a message to see the preview here","es":"Escriba un mensaje para ver la vista previa aquí"}
+    ,{"key":"preview.inputPlaceholder","pt":"Digite uma mensagem","en":"Type a message","es":"Escriba un mensaje"}
+    ,{"key":"preview.availableVariables","pt":"Variáveis disponíveis:","en":"Available variables:","es":"Variables disponibles:"}
+  ]
+}

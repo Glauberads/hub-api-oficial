@@ -1,0 +1,346 @@
+import React, { useEffect, useState, useContext } from "react";
+import { BrowserRouter, Switch } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import moment from "moment";
+
+import LoggedInLayout from "../layout";
+import Dashboard from "../pages/Dashboard/";
+import TicketResponsiveContainer from "../pages/TicketResponsiveContainer";
+import Signup from "../pages/Signup";
+import Login from "../pages/Login/";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetPassword from "../pages/ResetPassword";
+import Connections from "../pages/Connections/";
+import Settings from "../pages/SettingsCustom/";
+import Financeiro from "../pages/Financeiro/";
+import Users from "../pages/Users";
+import Contacts from "../pages/Contacts/";
+import ContactImportPage from "../pages/Contacts/import";
+import ChatMoments from "../pages/Moments";
+import Queues from "../pages/Queues/";
+import Tags from "../pages/Tags/";
+import MessagesAPI from "../pages/MessagesAPI/";
+import Helps from "../pages/Helps/";
+import ContactLists from "../pages/ContactLists/";
+import ContactListItems from "../pages/ContactListItems/";
+import Companies from "../pages/Companies/";
+import Wallets from "../pages/Wallets/";
+import QuickMessages from "../pages/QuickMessages/";
+import { AuthProvider, AuthContext } from "../context/Auth/AuthContext";
+import { CurrencyProvider } from "../context/Currency/CurrencyContext";
+import { TicketsContextProvider } from "../context/Tickets/TicketsContext";
+import { WhatsAppsProvider } from "../context/WhatsApp/WhatsAppsContext";
+import Route from "./Route";
+import Schedules from "../pages/Schedules";
+import Campaigns from "../pages/Campaigns";
+import CampaignsConfig from "../pages/CampaignsConfig";
+import CampaignReport from "../pages/CampaignReport";
+import Annoucements from "../pages/Annoucements";
+import Chat from "../pages/Chat";
+import Prompts from "../pages/Prompts";
+import AllConnections from "../pages/AllConnections/";
+import Reports from "../pages/Reports";
+import RelatorioVendas from "../pages/RelatorioVendas";
+import Subscription from "../pages/Subscription/";
+import QueueIntegration from "../pages/QueueIntegration";
+import Files from "../pages/Files/";
+import ToDoList from "../pages/ToDoList/";
+import Tarefas from "../pages/Tarefas";
+import Renewals from "../pages/Renewals";
+import Kanban from "../pages/Kanban";
+import TagsKanban from "../pages/TagsKanban";
+import BirthdaySettingsPage from "../pages/BirthdaySettings";
+import EmailSettings from "../pages/EmailSettings";
+import LandingWebhooks from "../pages/LandingWebhooks";
+import CallHistoricals from "../pages/CallHistoricals";
+
+import { FlowBuilderConfig } from "../pages/FlowBuilderConfig";
+import FlowBuilder from "../pages/FlowBuilder";
+import FlowDefault from "../pages/FlowDefault";
+import CampaignsPhrase from "../pages/CampaignsPhrase";
+import Floup from "../pages/Floup";
+import FloupDashboard from "../pages/FloupDashboard";
+import TemplateManager from "../pages/TemplateManager";
+import Warmup from "../pages/Warmup";
+import ServerReport from "../pages/ServerReport";
+import AiSdr from "../pages/AiSdr";
+import WhatsappHealth from "../pages/WhatsappHealth";
+import UserPerformanceReport from "../pages/UserPerformanceReport";
+
+const RoutesContent = () => {
+  const [showCampaigns, setShowCampaigns] = useState(false);
+  const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    const cshow = localStorage.getItem("cshow");
+    if (cshow !== undefined) {
+      setShowCampaigns(true);
+    }
+  }, []);
+
+  // Verificar se a empresa está vencida
+  const isCompanyExpired = () => {
+    if (!user || !user.company || user.company.id === 1) {
+      return false; // Empresa ID 1 nunca expira
+    }
+
+    const dueDate = user.company.dueDate;
+    if (!dueDate) return false;
+
+    // Comparar apenas as datas (sem horas) para permitir acesso até 23h59 do dia do vencimento
+    const hojeInicio = moment().startOf("day");
+    const vencimentoInicio = moment(dueDate).startOf("day");
+
+    // Empresa está vencida apenas após o dia do vencimento
+    return hojeInicio.isAfter(vencimentoInicio, "day");
+  };
+
+  return (
+    <TicketsContextProvider>
+      <Switch>
+        <Route exact path="/login" component={Login} />
+        <Route exact path="/signup" component={Signup} />
+        <Route exact path="/forgot-password" component={ForgotPassword} />
+        <Route exact path="/reset-password" component={ResetPassword} />
+
+        <WhatsAppsProvider>
+          <LoggedInLayout hideMenu={isCompanyExpired()}>
+            <Route
+              exact
+              path="/financeiro"
+              component={Financeiro}
+              isPrivate
+            />
+
+            <Route
+              exact
+              path="/financeiro-aberto"
+              component={Financeiro}
+              isPrivate
+            />
+
+            <Route
+              exact
+              path="/companies"
+              component={Companies}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/birthday-settings"
+              component={BirthdaySettingsPage}
+              isPrivate
+            />
+            <Route exact path="/" component={Dashboard} isPrivate />
+
+            <Route
+              exact
+              path="/server-report"
+              component={ServerReport}
+              isPrivate
+            />
+
+
+            <Route
+              exact
+              path="/tickets/:ticketId?"
+              component={TicketResponsiveContainer}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/connections"
+              component={Connections}
+              isPrivate
+            />
+
+            <Route
+              exact
+              path="/warmup"
+              component={Warmup}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/quick-messages"
+              component={QuickMessages}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/template-manager"
+              component={TemplateManager}
+              isPrivate
+            />
+            <Route exact path="/whatsapp-health" component={WhatsappHealth} isPrivate />
+            <Route exact path="/user-performance" component={UserPerformanceReport} isPrivate />
+            <Route exact path="/tarefas" component={Tarefas} isPrivate />
+            <Route exact path="/renovacoes" component={Renewals} isPrivate />
+            <Route exact path="/todolist" component={ToDoList} isPrivate />
+            <Route
+              exact
+              path="/schedules"
+              component={Schedules}
+              isPrivate
+            />
+            <Route exact path="/tags" component={Tags} isPrivate />
+            <Route exact path="/contacts" component={Contacts} isPrivate />
+            <Route
+              exact
+              path="/contacts/import"
+              component={ContactImportPage}
+              isPrivate
+            />
+            <Route exact path="/wallets" component={Wallets} isPrivate />
+            <Route exact path="/helps" component={Helps} isPrivate />
+            <Route exact path="/users" component={Users} isPrivate />
+            <Route
+              exact
+              path="/messages-api"
+              component={MessagesAPI}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/settings"
+              component={Settings}
+              isPrivate
+            />
+            <Route exact path="/queues" component={Queues} isPrivate />
+            <Route exact path="/reports" component={Reports} isPrivate />
+            <Route
+              exact
+              path="/dashboard/chamadas"
+              component={CallHistoricals}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/relatorio-vendas"
+              component={RelatorioVendas}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/queue-integration"
+              component={QueueIntegration}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/announcements"
+              component={Annoucements}
+              isPrivate
+            />
+            <Route exact path="/chats/:id?" component={Chat} isPrivate />
+            <Route exact path="/files" component={Files} isPrivate />
+            <Route
+              exact
+              path="/moments"
+              component={ChatMoments}
+              isPrivate
+            />
+            <Route exact path="/Kanban" component={Kanban} isPrivate />
+            <Route
+              exact
+              path="/TagsKanban"
+              component={TagsKanban}
+              isPrivate
+            />
+            <Route exact path="/prompts" component={Prompts} isPrivate />
+            <Route
+              exact
+              path="/ai-sdr"
+              component={AiSdr}
+              isPrivate
+            />
+
+            <Route
+              exact
+              path="/allConnections"
+              component={AllConnections}
+              isPrivate
+            />
+
+            <Route
+              exact
+              path="/plugins/floup"
+              component={Floup}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/plugins/floup/dashboard"
+              component={FloupDashboard}
+              isPrivate
+            />
+
+            <Route
+              exact
+              path="/phrase-lists"
+              component={CampaignsPhrase}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/flowbuilders"
+              component={FlowBuilder}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/flowbuilder/:id?"
+              component={FlowBuilderConfig}
+              isPrivate
+            />
+
+            <Route
+              exact
+              path="/email-settings"
+              component={EmailSettings}
+              isPrivate
+            />
+            <Route
+              exact
+              path="/landing-webhooks"
+              component={LandingWebhooks}
+              isPrivate
+            />
+
+            {showCampaigns && (
+              <>
+                <Route
+                  exact
+                  path="/campaigns"
+                  component={Campaigns}
+                  isPrivate
+                />
+                <Route
+                  exact
+                  path="/campaign/:campaignId/report"
+                  component={CampaignReport}
+                  isPrivate
+                />
+              </>
+            )}
+          </LoggedInLayout>
+        </WhatsAppsProvider>
+      </Switch>
+      <ToastContainer position="top-center" autoClose={3000} />
+    </TicketsContextProvider>
+  );
+};
+
+const Routes = () => {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <CurrencyProvider>
+          <RoutesContent />
+        </CurrencyProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+};
+
+export default Routes;

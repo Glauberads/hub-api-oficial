@@ -1,0 +1,280 @@
+name: gads
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+x-security: &default-security
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: gads-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      GADS_DB_PASSWORD: ${GADS_DB_PASSWORD}
+      GADS_OFFICIAL_DB_PASSWORD: ${GADS_OFFICIAL_DB_PASSWORD}
+    volumes:
+      - gads_postgres_data:/var/lib/postgresql/data
+      - ./postgres-init/01-create-databases.sh:/docker-entrypoint-initdb.d/01-create-databases.sh:ro
+    expose:
+      - "5432"
+    networks:
+      multizap_internal:
+        aliases:
+          - gads-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    mem_limit: 1536m
+    mem_reservation: 256m
+    pids_limit: 256
+    cpus: 1.5
+    logging: *default-logging
+    <<: *default-security
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: gads-redis
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command:
+      - /bin/sh
+      - -ec
+      - exec redis-server --appendonly yes --appendfsync everysec --requirepass "$${REDIS_PASSWORD}"
+    volumes:
+      - gads_redis_data:/data
+    expose:
+      - "6379"
+    networks:
+      multizap_internal:
+        aliases:
+          - gads-redis
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    mem_limit: 512m
+    mem_reservation: 64m
+    pids_limit: 128
+    cpus: 0.5
+    logging: *default-logging
+    <<: *default-security
+
+  backend:
+    build:
+      context: ./source/backend
+      dockerfile: Dockerfile
+    image: gads-backend:5.5-node22
+    container_name: gads-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      BACKEND_URL: https://api.glauberads.com.br
+      FRONTEND_URL: https://hub.glauberads.com.br
+      PROXY_PORT: ""
+      DB_DIALECT: postgres
+      DB_HOST: gads-postgres
+      DB_PORT: "5432"
+      DB_NAME: gads
+      DB_USER: gads_app
+      DB_PASS: ${GADS_DB_PASSWORD}
+      DB_POOL_MAX: "10"
+      DB_POOL_MIN: "1"
+      DB_POOL_ACQUIRE: "30000"
+      DB_POOL_IDLE: "30000"
+      REDIS_HOST: gads-redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_SECRET_KEY: ${REDIS_SECRET_KEY}
+      REDIS_OPT_LIMITER_MAX: "1"
+      REDIS_OPT_LIMITER_DURATION: "3000"
+      JWT_SECRET: ${BACKEND_JWT_SECRET}
+      JWT_REFRESH_SECRET: ${BACKEND_JWT_REFRESH_SECRET}
+      PROCESS_ROLE: all
+      SOCKET_REDIS_ADAPTER: "false"
+      SOCKET_REDIS_EMITTER: "false"
+      SOCKET_ADMIN: "false"
+      BULL_BOARD: "false"
+      BULL_USER: disabled
+      BULL_PASS: ${BULL_PASS}
+      IMPORT_ALL_WHATSAPP_CONTACTS: "false"
+      USE_WHATSAPP_OFICIAL: "true"
+      URL_API_OFICIAL: http://gads-api-oficial:6000
+      API_OFICIAL_URL: http://gads-api-oficial:6000
+      TOKEN_API_OFICIAL: ${API_TOKEN}
+      TRANSCRIBE_URL: http://gads-transcricao:4002
+      TRANSCRIBE_API_KEY: ${TRANSCRIBE_API_KEY}
+      MASTER_KEY: ${MASTER_KEY}
+    volumes:
+      - gads_backend_public:/app/public
+      - gads_backend_private:/app/private
+      - gads_backend_logs:/app/logs
+    expose:
+      - "8080"
+    networks:
+      - multizap_internal
+      - proxy
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      transcricao:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    mem_limit: 2g
+    mem_reservation: 384m
+    pids_limit: 256
+    cpus: 2.0
+    init: true
+    logging: *default-logging
+    <<: *default-security
+
+  frontend:
+    build:
+      context: ./source/frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_BACKEND_URL: https://api.glauberads.com.br
+    image: gads-frontend:5.5-pwa-fix
+    container_name: gads-frontend
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: 256m
+    mem_reservation: 32m
+    pids_limit: 64
+    cpus: 0.5
+    logging: *default-logging
+    <<: *default-security
+
+  api-oficial:
+    build:
+      context: ./source/api_oficial
+      dockerfile: Dockerfile
+    image: gads-api-oficial:5.5-node22
+    container_name: gads-api-oficial
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "6000"
+      DB_HOST: gads-postgres
+      DB_PORT: "5432"
+      DB_NAME: gads_oficial
+      DB_USER: gads_oficial_app
+      DB_PASS: ${GADS_OFFICIAL_DB_PASSWORD}
+      REDIS_HOST: gads-redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${API_JWT_SECRET}
+      TOKEN_ADMIN: ${API_TOKEN}
+      URL_BACKEND_MULT100: http://gads-backend:8080
+      CORS_ALLOWED_ORIGINS: https://hub.glauberads.com.br
+      ENABLE_SWAGGER: "false"
+      RABBITMQ_ENABLED_GLOBAL: "false"
+    volumes:
+      - gads_api_public:/app/public
+    expose:
+      - "6000"
+    networks:
+      - multizap_internal
+      - proxy
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get({host:'127.0.0.1',port:6000,path:'/'},r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    mem_limit: 768m
+    mem_reservation: 128m
+    pids_limit: 128
+    cpus: 1.0
+    init: true
+    logging: *default-logging
+    <<: *default-security
+
+  transcricao:
+    build:
+      context: ./source/api_transcricao
+      dockerfile: Dockerfile
+    image: gads-transcricao:5.5-python312
+    container_name: gads-transcricao
+    restart: unless-stopped
+    environment:
+      PORT: "4002"
+      FLASK_DEBUG: "0"
+    expose:
+      - "4002"
+    networks:
+      multizap_internal:
+        aliases:
+          - gads-transcricao
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4002/', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 768m
+    mem_reservation: 192m
+    pids_limit: 128
+    cpus: 1.0
+    init: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    logging: *default-logging
+    <<: *default-security
+
+networks:
+  multizap_internal:
+    name: multizap_internal
+    driver: bridge
+  proxy:
+    external: true
+    name: proxy
+
+volumes:
+  gads_postgres_data:
+    name: gads_postgres_data
+  gads_redis_data:
+    name: gads_redis_data
+  gads_backend_public:
+    name: gads_backend_public
+  gads_backend_private:
+    name: gads_backend_private
+  gads_backend_logs:
+    name: gads_backend_logs
+  gads_api_public:
+    name: gads_api_public
